@@ -1,19 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Agent Mail 邮件工具：安卓 Termux 一键安装。
 # 用法（通讯录每个人写成「名字 邮箱」，用引号括起来）：
-#   curl -fsSL https://raw.githubusercontent.com/papalya233/agent-mail-mcp/main/install-termux.sh -o install.sh
+#   curl -fsSL https://cdn.jsdelivr.net/gh/papalya233/agent-mail-mcp@main/install-termux.sh -o install.sh
 #   bash install.sh "朋友 friend@agent.qq.com" "另一个朋友 other@agent.qq.com"
+# 每样东西先试原地址，10 秒连不上就换国内能连上的（jsDelivr、npmmirror）；命令行程序照旧核对指纹。
 # 再跑一次就是「改通讯录」：口令和登录都会保留。
 set -euo pipefail
 
 REPO_RAW="https://raw.githubusercontent.com/papalya233/agent-mail-mcp/main"
+REPO_CDN="https://cdn.jsdelivr.net/gh/papalya233/agent-mail-mcp@main"
 CLI_VERSION="1.0.18"
+NPM_PATH="@tencent-qqmail/agently-cli-linux-arm64/-/agently-cli-linux-arm64-${CLI_VERSION}.tgz"
 CLI_SHA256="84a90737baaaba8da3d2584c3c71eaa5afb1f4613bf13f3038e3c58f1c28c0f2"
 APP="$HOME/agent-mail"
 WORKSPACE="${AGENT_MAIL_WORKSPACE:-agent}"
 PORT="${AGENT_MAIL_PORT:-8811}"
 
 step() { printf '\n== %s\n' "$*"; }
+# fetch 存成的文件 地址1 地址2 …：一个个试，10 秒连不上就换下一个
+fetch() {
+  local out=$1 url host; shift
+  for url in "$@"; do
+    host=$(printf '%s' "$url" | cut -d/ -f3)
+    printf '  从 %s 下载 %s …\n' "$host" "$(basename "$out")"
+    if curl -fsSL --connect-timeout 10 --max-time 300 -o "$out" "$url"; then return 0; fi
+    printf '  %s 连不上，换一个\n' "$host"
+  done
+  return 1
+}
 fail() { printf '\n!! %s\n' "$*"; exit 1; }
 
 [ -n "${PREFIX:-}" ] && [ -d "$PREFIX" ] || fail "请在安卓的 Termux 里运行这个脚本。"
@@ -28,7 +42,7 @@ step "2/6 下载腾讯 Agent Mail 的命令行（核对文件指纹）"
 mkdir -p "$APP/bin"
 cd "$APP"
 if [ ! -x "$APP/bin/agently-cli" ]; then
-  curl -fsSL -o cli.tgz "https://registry.npmjs.org/@tencent-qqmail/agently-cli-linux-arm64/-/agently-cli-linux-arm64-${CLI_VERSION}.tgz"
+  fetch cli.tgz "https://registry.npmjs.org/$NPM_PATH" "https://registry.npmmirror.com/$NPM_PATH" || fail "命令行程序下载不下来，检查一下网络再跑一次。"
   echo "${CLI_SHA256}  cli.tgz" | sha256sum -c - >/dev/null 2>&1 || { rm -f cli.tgz; fail "下载的文件指纹对不上，已删掉，没有安装。"; }
   tar xzf cli.tgz
   mv package/bin/agently-cli bin/agently-cli
@@ -38,8 +52,8 @@ fi
 "$APP/bin/agently-cli" --version
 
 step "3/6 下载邮件工具"
-curl -fsSL -o mail_mcp.py "$REPO_RAW/mail_mcp.py"
-curl -fsSL -o start-termux.sh "$REPO_RAW/start-termux.sh"
+fetch mail_mcp.py "$REPO_RAW/mail_mcp.py" "$REPO_CDN/mail_mcp.py" || fail "邮件工具下载不下来，检查一下网络再跑一次。"
+fetch start-termux.sh "$REPO_RAW/start-termux.sh" "$REPO_CDN/start-termux.sh" || fail "启动脚本下载不下来，检查一下网络再跑一次。"
 
 step "4/6 写配置和通讯录"
 python3 - "$APP" "$WORKSPACE" "$PORT" "$@" <<'PY'

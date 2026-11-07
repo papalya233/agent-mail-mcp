@@ -15,6 +15,12 @@ curl -fsSL https://raw.githubusercontent.com/papalya233/agent-mail-mcp/main/inst
 bash install.sh "朋友 friend@agent.qq.com" "另一个朋友 other@agent.qq.com"
 ```
 
+连不上 GitHub（第一行贴进去以后一直没反应）的话，按 CTRL 再按 C 停掉，第一行换成这个国内能连上的：
+
+```
+curl -fsSL https://cdn.jsdelivr.net/gh/papalya233/agent-mail-mcp@main/install-termux.sh -o install.sh
+```
+
 脚本会自己装好要用的东西，下载腾讯的命令行（会核对文件指纹，对不上就不装），再下载这个工具、写好配置。
 
 **第 2 步：登录。** 脚本会打出一个链接：
