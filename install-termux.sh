@@ -115,7 +115,9 @@ sleep 2
 if tmux has-session -t mail 2>/dev/null; then echo "邮件工具启动了（tmux 里叫 mail 的那个窗口）。"; else echo "启动失败：敲 sh '$APP/start-termux.sh' '$APP/config.json' 看看报什么错。"; fi
 EOF
 chmod +x "$APP/start.sh"
-grep -q "alias mail-start=" "$HOME/.bashrc" 2>/dev/null || echo "alias mail-start='bash $APP/start.sh'" >> "$HOME/.bashrc"
+# 做成真正的命令文件（别名要新开窗口才认得，装完当场敲会说找不到）
+printf '#!/data/data/com.termux/files/usr/bin/bash\nexec bash "%s/start.sh" "$@"\n' "$APP" > "$PREFIX/bin/mail-start"
+chmod +x "$PREFIX/bin/mail-start"
 tmux kill-session -t mail 2>/dev/null || true
 pkill -f "$APP/mail_mcp.py" 2>/dev/null || true  # 关 tmux 窗口不一定能关掉里面的程序，旧的还占着端口新的就起不来
 sleep 1
