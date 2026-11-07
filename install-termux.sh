@@ -79,8 +79,19 @@ print('通讯录：' + '、'.join(f"{c['name']}（{c['email']}）" for c in cont
 PY
 
 step "5/6 登录邮箱"
+# 设置写进一个小文件，模拟环境只跑这个文件。不能把带空格的长命令交给 termux-chroot：
+# 有的版本会在空格处把它拆碎，设置就丢了（证书没设上，登录会报 certificate signed by unknown authority）。
+cat > "$APP/cli.sh" <<CLI
+#!/data/data/com.termux/files/usr/bin/sh
+export SSL_CERT_FILE="\$PREFIX/etc/tls/cert.pem"
+export AGENTLY_WORKSPACE="$WORKSPACE"
+export AGENTLY_DISABLE_TELEMETRY=1
+export AGENTLY_CLI_NO_UPDATE_NOTIFIER=1
+exec "$APP/bin/agently-cli" "\$@"
+CLI
+chmod +x "$APP/cli.sh"
 run_cli() {
-  termux-chroot sh -c "export SSL_CERT_FILE=\"\$PREFIX/etc/tls/cert.pem\" AGENTLY_WORKSPACE='$WORKSPACE' AGENTLY_DISABLE_TELEMETRY=1 AGENTLY_CLI_NO_UPDATE_NOTIFIER=1; '$APP/bin/agently-cli' $*"
+  termux-chroot sh "$APP/cli.sh" "$@"
 }
 if run_cli auth status 2>/dev/null | grep '"logged_in": true' >/dev/null; then
   echo "已经登录过了，跳过。"
@@ -90,7 +101,7 @@ else
   echo "  2. 用手机微信【扫一扫】对着电脑屏幕扫（从相册识别不行）；"
   echo "  3. 在「授权接入使用的邮箱」页上，选「新建邮箱地址并绑定」，给它起个地址，再点确定。"
   echo "  不要选已经绑了别的机的地址，选了会把那边顶掉。"
-  run_cli auth login || fail "登录没成功（可能是链接过期了）。不用着急，再跑一次这个脚本就行。"
+  run_cli auth login || fail "登录没成功。把上面最后几行（ERROR 开头的）截图发给帮你装的人；如果是链接过期了，再跑一次这个脚本就行。"
 fi
 run_cli +me | grep -E '"email"' || true
 
