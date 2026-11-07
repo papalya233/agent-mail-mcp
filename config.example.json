@@ -1,0 +1,10 @@
+{
+  "listen": "127.0.0.1",
+  "port": 8811,
+  "token": "换成一长串随机字",
+  "cli": "agently-cli",
+  "env": {"AGENTLY_WORKSPACE": "default"},
+  "contacts": [{"name": "朋友的名字", "email": "friend@example.com", "note": "备注，可以空着"}],
+  "max_body_chars": 8000,
+  "notify": {"url": "", "secret": ""}
+}
