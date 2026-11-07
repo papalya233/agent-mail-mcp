@@ -23,7 +23,7 @@ fetch() {
   for url in "$@"; do
     host=$(printf '%s' "$url" | cut -d/ -f3)
     printf '  从 %s 下载 %s …\n' "$host" "$(basename "$out")"
-    if curl -fsSL --connect-timeout 10 --max-time 300 -o "$out" "$url"; then return 0; fi
+    if curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 15 --max-time 300 -o "$out" "$url"; then return 0; fi
     printf '  %s 连不上，换一个\n' "$host"
   done
   return 1
@@ -117,6 +117,8 @@ EOF
 chmod +x "$APP/start.sh"
 grep -q "alias mail-start=" "$HOME/.bashrc" 2>/dev/null || echo "alias mail-start='bash $APP/start.sh'" >> "$HOME/.bashrc"
 tmux kill-session -t mail 2>/dev/null || true
+pkill -f "$APP/mail_mcp.py" 2>/dev/null || true  # 关 tmux 窗口不一定能关掉里面的程序，旧的还占着端口新的就起不来
+sleep 1
 bash "$APP/start.sh"
 
 TOKEN=$(python3 -c "import json;print(json.load(open('$APP/config.json'))['token'])")

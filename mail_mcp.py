@@ -461,6 +461,11 @@ def main():
                     worker.join(timeout=6)
     except KeyboardInterrupt:
         pass
+    except OSError as exc:
+        # 最常见的是端口被占（上一次的还开着）；只说原因，不带配置内容
+        reason = '端口已经被占用，多半是上一次的邮件工具还开着' if exc.errno in (48, 98) else '文件或网络出错'
+        LOG.error('mail_server failure 0ms：%s', reason)
+        return 1
     except Exception:
         LOG.error('mail_server failure 0ms')
         return 1
